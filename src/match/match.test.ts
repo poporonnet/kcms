@@ -29,11 +29,10 @@ describe("正しくインスタンスを生成できる", () => {
 
     expect(actual.id).toBe("999");
     expect(actual.teams).toEqual([entry1, entry2]);
-    expect(actual.points).toBeUndefined();
-    expect(actual.winnerID).toBeUndefined();
     expect(actual.matchType).toBe("primary");
     expect(actual.courseIndex).toBe(0);
-    expect(actual.time).toBeUndefined();
+    expect(actual.winnerID).toBeUndefined();
+    expect(actual.result).toBeUndefined();
   });
 
   it("試合相手が居ないとき", () => {
@@ -46,10 +45,9 @@ describe("正しくインスタンスを生成できる", () => {
 
     expect(actual.id).toBe("999");
     expect(actual.teams).toEqual([entry1, undefined]);
-    expect(actual.points).toBeUndefined();
-    expect(actual.winnerID).toBeUndefined();
     expect(actual.matchType).toBe("primary");
     expect(actual.courseIndex).toBe(0);
-    expect(actual.time).toBeUndefined();
+    expect(actual.result).toBeUndefined();
+    expect(actual.winnerID).toBeUndefined();
   });
 });
