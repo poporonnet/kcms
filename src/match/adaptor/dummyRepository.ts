@@ -35,4 +35,8 @@ export class DummyMatchRepository implements MatchRepository {
     this.data[i] = match;
     return Result.ok(match);
   }
+
+  public async findAll(): Promise<Result.Result<Error, Match[]>> {
+    return Result.ok(this.data);
+  }
 }

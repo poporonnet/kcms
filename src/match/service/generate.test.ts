@@ -37,3 +37,56 @@ describe("予選の対戦表を正しく生成できる", () => {
     }
   });
 });
+
+describe("本選の対戦表を正しく生成できる", async () => {
+  const repository = new DummyRepository();
+  const matchRepository = new DummyMatchRepository();
+  const service = new GenerateMatchService(repository, matchRepository);
+  const dummyData = generateDummyData(16);
+  dummyData.map((v) => repository.create(v));
+
+  const match =  await service.generatePrimaryMatch();
+  if (Result.isErr(match)) {
+    return;
+  }
+  match[1].map((v) => {
+    v.map(j => {
+      j.results = {
+        Left: {
+          teamID: j.teams.Left?.id ?? "",
+          points: Number(j.teams.Left?.id ?? 0),
+          time: Number(j.teams.Left?.id ?? 0)
+        },
+        Right: {
+          teamID: j.teams.Right?.id ?? "" ,
+          points: Number(j.teams.Right?.id ?? 0),
+          time: Number(j.teams.Right?.id ?? 0)
+        }
+      }
+      // fixme: 消す(最下位とその1つ上の点数を同じにしている)
+      if (j.teams.Left) {
+        if (j.teams.Left.id === "1") {
+          j.results.Left.points = 0;
+          j.results.Left.time = 0;
+        }
+      }
+      if (j.teams.Right) {
+        if (j.teams.Right.id === "1") {
+          j.results.Right.points = 0;
+          j.results.Right.time = 1;
+        }
+      }
+      matchRepository.update(j)
+    })
+  });
+
+  it("ランキングを正しく生成できる", async () => {
+    const res = await service.generateRanking();
+    console.log(res);
+  });
+
+  it("本選の対戦表を正しく生成できる", async () => {
+    const res = await service.generateFinalMatch();
+    console.table(res[1]);
+  });
+});
