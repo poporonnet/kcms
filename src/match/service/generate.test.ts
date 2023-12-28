@@ -11,11 +11,12 @@ const generateDummyData = (n: number): Entry[] => {
   for (let i = 0; i < n; i++) {
     res.push(
       Entry.new({
-        id: `${i}`,
-        teamName: `チーム ${i}`,
-        members: [`チーム${i}のメンバー1`],
+        id: `${i+1}`,
+        teamName: `チーム ${i+1}`,
+        members: [`チーム${i+1}のメンバー1`],
         isMultiWalk: true,
-        category: i % 2 === 0 ? "Open" : "Elementary",
+        // 1~8がOpen, 9~16がElementary
+        category: i < 8 ? "Open" : "Elementary",
       }),
     );
   }

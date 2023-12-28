@@ -86,19 +86,21 @@ export class GenerateMatchService {
      */
 
     const rank = await this.generateRanking();
-    const tournament = [
+    const [elementaryTournament] = [
       this.tournament(rank[0]),
       this.tournament(rank[1])
     ]
+    console.log(JSON.stringify(this.tournament(rank[1])))
     // 初期トーナメントから試合を生成する
-    console.log(JSON.stringify(tournament));
+    const a = this.flattenTournament(elementaryTournament);
+    console.log(a);
     // ToDo: 部門ごとにトーナメントを生成
     return Result.ok([]);
   }
 
   // ToDo: 本戦の順位を計算できるようにする
-  // ToDo: (予選)タイムと得点が同じ場合だったときの順位決定処理
-  // ToDo: 部門ごとにランキングを生成できるように
+  // - ToDo: (予選)タイムと得点が同じ場合だったときの順位決定処理
+  // - ToDo: 部門ごとにランキングを生成できるように -> OK
   async generateRanking(): Promise<TournamentRank[][]> {
     const res = await this.matchRepository.findAll();
     if (Result.isErr(res)) {
@@ -191,6 +193,25 @@ export class GenerateMatchService {
 
     const pairs = new Array(ids.length / 2).fill(null).map((_, i) => [ids[i], ids[ids.length - 1 - i]] as Tournament);
     return this.tournament(pairs);
+  }
+
+  private flattenTournament(t: Tournament): [TournamentRank, TournamentRank] {
+    const isTournamentRank = (t: TournamentRank | Tournament): t is TournamentRank => {
+      return (t as TournamentRank).rank !== undefined;
+    }
+    const isTournament = (t: TournamentRank | Tournament): t is Tournament => {
+      return Array.isArray(t) && t.length === 2;
+    }
+
+    if (Array.isArray(t)) {
+      const [rank1, rank2] = t;
+      if (isTournamentRank(rank1) && isTournamentRank(rank2)) {
+        return [rank1, rank2];
+      } else if (isTournament(rank1) && isTournament(rank2)) {
+        return this.flattenTournament(rank1);
+      }
+    }
+    throw new Error('Invalid tournament structure');
   }
 
 }
