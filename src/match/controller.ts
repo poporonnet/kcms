@@ -20,16 +20,32 @@ export class MatchController {
     this.getService = getService;
   }
 
-  async generateMatch(type: string) {
-    switch (type) {
-      case "primary":
-        return await this.generatePrimary();
-      default:
-        return Result.err(new Error("unknown match type"));
+  async generateMatch(
+    type: string,
+    category: string,
+  ): Promise<Result.Result<Error, matchJSON[][]>> {
+    if (type === "primary") {
+      if (category === "open")
+        return Result.err(new Error("cant generate open primary matches"));
+
+      const res = await this.generatePrimary();
+      if (Result.isErr(res)) {
+        return Result.err(new Error("failed to generate primary matches"));
+      }
+      return Result.ok(res[1]);
+    } else if (type === "final") {
+      const res = await this.generateFinal(category);
+      if (Result.isErr(res)) {
+        return Result.err(new Error("failed to generate final matches"));
+      }
+      return Result.ok([res[1]]);
     }
+    return Result.err(new Error("invalid match type"));
   }
 
-  private async generatePrimary() {
+  private async generatePrimary(): Promise<
+    Result.Result<Error, matchJSON[][]>
+  > {
     const res = await this.matchService.generatePrimaryMatch();
     if (Result.isErr(res)) {
       return Result.err(res[1]);
@@ -37,7 +53,10 @@ export class MatchController {
     return Result.ok(res[1].map((i) => i.map(this.toJSON)));
   }
 
-  async editMatch(id: string, args: matchUpdateJSON) {
+  async editMatch(
+    id: string,
+    args: matchUpdateJSON,
+  ): Promise<Result.Result<Error, matchJSON>> {
     const res = await this.editService.handle(id, args);
     if (Result.isErr(res)) {
       return Result.err(res[1]);
@@ -57,7 +76,9 @@ export class MatchController {
     return Result.ok(res[1].map((i) => this.toJSON(i.toDomain())));
   }
 
-  async generateFinal(category: string) {
+  async generateFinal(
+    category: string,
+  ): Promise<Result.Result<Error, matchJSON[]>> {
     if (!(category === "elementary" || category === "open")) {
       return Result.err(new Error("invalid match type"));
     }
@@ -65,13 +86,11 @@ export class MatchController {
     if (Result.isErr(res)) {
       return Result.err(res[1]);
     }
-    return Result.ok(
-      res[1].map(v => this.toJSON(v))
-    )
+    return Result.ok(res[1].map((v) => this.toJSON(v)));
   }
 
-  private toJSON(i: Match) {
-    const toTeamJSON = (i?: Entry) => {
+  private toJSON(i: Match): matchJSON {
+    const toTeamJSON = (i?: Entry): matchTeamJSON | undefined => {
       if (!i) {
         return i;
       }
@@ -115,4 +134,22 @@ interface matchResultFinalPairJSON {
 
 interface matchUpdateJSON {
   results: matchResultPairJSON | matchResultFinalPairJSON;
+}
+
+interface matchTeamJSON {
+  id: string;
+  teamName: string;
+  isMultiWalk: boolean;
+  category: string;
+}
+
+interface matchJSON {
+  id: string;
+  teams: {
+    left: undefined | matchTeamJSON;
+    right: undefined | matchTeamJSON;
+  };
+  matchType: "primary" | "final";
+  courseIndex: number;
+  results: matchResultPairJSON | matchResultFinalPairJSON | undefined;
 }

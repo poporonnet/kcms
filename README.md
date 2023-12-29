@@ -199,9 +199,11 @@ body: `application/json`
 - `UNKNOWN_CATEGORY`: 存在しないカテゴリ
 - `UNKNOWN_MATCH_TYPE`: 存在しない対戦種類
 
-### `POST /match/{matchType}`
+### `POST /match/{matchType}/{category}`
 
 各部門の本選、予選対戦表を生成します
+※ 既に生成済みの場合は上書きされます
+※ オープン部門の予選対戦表は生成できません(エラーになります)
 
 #### 入力
 
@@ -209,6 +211,8 @@ body: `application/json`
 
 - `matchType`: `"final"|"primary"`
   - 部門名
+- `category`: `"elementary"|"open"`
+  - カテゴリ
 
 ```json
 {}
