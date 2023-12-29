@@ -89,7 +89,7 @@ export class GenerateMatchService {
 
   // ToDo: 本選トーナメント対戦表の生成
   async generateFinalMatch(
-    matchType: "elementary" | "open",
+    category: "elementary" | "open",
   ): Promise<Result.Result<Error, Match[]>> {
     /*
     初期対戦表を生成
@@ -103,7 +103,7 @@ export class GenerateMatchService {
     ];
 
     const matches: Match[] = [];
-    if (matchType === "elementary") {
+    if (category === "elementary") {
       for (const v of elementaryTournament) {
         matches.push(
           Match.new({

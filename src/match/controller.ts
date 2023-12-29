@@ -57,6 +57,19 @@ export class MatchController {
     return Result.ok(res[1].map((i) => this.toJSON(i.toDomain())));
   }
 
+  async generateFinal(category: string) {
+    if (!(category === "elementary" || category === "open")) {
+      return Result.err(new Error("invalid match type"));
+    }
+    const res = await this.matchService.generateFinalMatch(category);
+    if (Result.isErr(res)) {
+      return Result.err(res[1]);
+    }
+    return Result.ok(
+      res[1].map(v => this.toJSON(v))
+    )
+  }
+
   private toJSON(i: Match) {
     const toTeamJSON = (i?: Entry) => {
       if (!i) {
