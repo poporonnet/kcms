@@ -3,7 +3,7 @@ import { MatchRepository } from "../service/repository.js";
 import { Option, Result } from "@mikuroxina/mini-fn";
 
 export class DummyMatchRepository implements MatchRepository {
-  private data: Match[];
+  private readonly data: Match[];
 
   constructor() {
     this.data = [];

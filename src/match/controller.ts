@@ -13,7 +13,7 @@ export class MatchController {
   constructor(
     matchService: GenerateMatchService,
     editService: EditMatchService,
-    getService: GetMatchService
+    getService: GetMatchService,
   ) {
     this.matchService = matchService;
     this.editService = editService;
@@ -54,7 +54,7 @@ export class MatchController {
     if (Result.isErr(res)) {
       return Result.err(res[1]);
     }
-    return Result.ok(res[1].map(i => this.toJSON(i.toDomain())));
+    return Result.ok(res[1].map((i) => this.toJSON(i.toDomain())));
   }
 
   private toJSON(i: Match) {
@@ -67,7 +67,7 @@ export class MatchController {
         id: i.id,
         teamName: i.teamName,
         isMultiWalk: i.isMultiWalk,
-        category: i.category
+        category: i.category,
       };
     };
 
@@ -75,11 +75,11 @@ export class MatchController {
       id: i.id,
       teams: {
         left: toTeamJSON(i.teams.Left),
-        right: toTeamJSON(i.teams.Right)
+        right: toTeamJSON(i.teams.Right),
       },
       matchType: i.matchType,
       courseIndex: i.courseIndex,
-      results: i.results
+      results: i.results,
     };
   }
 }

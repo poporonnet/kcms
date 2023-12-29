@@ -76,7 +76,6 @@ export class JSONMatchRepository implements MatchRepository {
     return Result.ok(this.data);
   }
 
-
   public async update(match: Match): Promise<Result.Result<Error, Match>> {
     const i = this.data.findIndex((m) => m.id === match.id);
     this.data[i] = match;
