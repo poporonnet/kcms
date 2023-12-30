@@ -23,7 +23,7 @@ const generateDummyData = (n: number): Entry[] => {
   return res;
 };
 
-describe("予選の対戦表を正しく生成できる", () => {
+describe("予選の対戦表を正しく生成できる", async () => {
   const repository = new DummyRepository();
   const matchRepository = new DummyMatchRepository();
   const service = new GenerateMatchService(repository, matchRepository);
@@ -89,6 +89,6 @@ describe("本選の対戦表を正しく生成できる", async () => {
   });
 
   it("本選の対戦表を正しく生成できる", async () => {
-    await service.generateFinalMatch("open");
+    await service.generateFinalMatch("elementary");
   });
 });
