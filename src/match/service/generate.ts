@@ -65,8 +65,9 @@ export class GenerateMatchService {
     for (let i = 0; i < courses.length; i++) {
       const courseMatches: Match[] = [];
       for (let k = 0; k < courses[i].length; k++) {
-        // 対戦相手のインデックス
-        const opponentIndex = k + 1 >= courses[i].length ? 0 : k + 1;
+        const courseLength = courses[i].length;
+        const gap = Math.floor(courseLength / 2);
+        const opponentIndex = k + gap >= courseLength ? (k+gap) - courseLength : k + gap;
         const match = Match.new({
           id: crypto.randomUUID(),
           matchType: "primary",

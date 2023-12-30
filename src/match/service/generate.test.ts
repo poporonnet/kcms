@@ -27,15 +27,17 @@ describe("予選の対戦表を正しく生成できる", () => {
   const repository = new DummyRepository();
   const matchRepository = new DummyMatchRepository();
   const service = new GenerateMatchService(repository, matchRepository);
-  const dummyData = generateDummyData(8);
+  const dummyData = generateDummyData(10);
   console.log(dummyData.length);
   dummyData.map((v) => repository.create(v));
 
   it("初期状態の対戦表を生成できる", async () => {
     const res = await service.generatePrimaryMatch();
     expect(Result.isErr(res)).toStrictEqual(false);
-    if (Result.isErr(res)) {
-      return;
+    for (const v of Result.unwrap(res)) {
+      for (const j of v) {
+        expect(j.teams.Left!.id).not.toBe(j.teams.Right!.id);
+      }
     }
   });
 });
