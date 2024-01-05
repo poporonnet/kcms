@@ -16,8 +16,8 @@ const generateDummyData = (n: number): Entry[] => {
         members: [`チーム${i + 1}のメンバー1`],
         isMultiWalk: true,
         // 1~8がOpen, 9~16がElementary
-        category: i < 8 ? "Open" : "Elementary"
-      })
+        category: i < 8 ? "Open" : "Elementary",
+      }),
     );
   }
   return res;
@@ -38,7 +38,10 @@ describe("予選の対戦表を正しく生成できる", async () => {
       for (const j of v) {
         expect(j.teams.Left!.id).not.toBe(j.teams.Right!.id);
         expect(j.teams.Left!.category).toStrictEqual(j.teams.Right!.category);
-        console.log(parseInt(j.teams.Left!.id) - 8, parseInt(j.teams.Right!.id) - 8);
+        console.log(
+          parseInt(j.teams.Left!.id) - 8,
+          parseInt(j.teams.Right!.id) - 8,
+        );
       }
       console.log("----------------------------------");
     }
@@ -62,13 +65,13 @@ describe("本選の対戦表を正しく生成できる", async () => {
         Left: {
           teamID: j.teams.Left?.id ?? "",
           points: Number(j.teams.Left?.id ?? 0),
-          time: Number(j.teams.Left?.id ?? 0)
+          time: Number(j.teams.Left?.id ?? 0),
         },
         Right: {
           teamID: j.teams.Right?.id ?? "",
           points: Number(j.teams.Right?.id ?? 0),
-          time: Number(j.teams.Right?.id ?? 0)
-        }
+          time: Number(j.teams.Right?.id ?? 0),
+        },
       };
       // fixme: 消す(最下位とその1つ上の点数を同じにしている)
       if (j.teams.Left) {
