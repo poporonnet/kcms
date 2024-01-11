@@ -38,7 +38,7 @@ describe('GetMatchService', () => {
   });
 });
 
-describe('MatchDTO', async () => {
+describe('MatchDTO', () => {
   const domain = Match.reconstruct({
     id: '1',
     teams: {
