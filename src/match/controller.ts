@@ -4,20 +4,24 @@ import { Match } from './match.js';
 import { EditMatchService } from './service/edit.js';
 import { Entry } from '../entry/entry.js';
 import { GetMatchService } from './service/get.js';
+import { GeneratePrimaryMatchService } from './service/generatePrimary.js';
 
 export class MatchController {
   private readonly matchService: GenerateMatchService;
+  private readonly primaryService: GeneratePrimaryMatchService;
   private readonly editService: EditMatchService;
   private readonly getService: GetMatchService;
 
   constructor(
     matchService: GenerateMatchService,
     editService: EditMatchService,
-    getService: GetMatchService
+    getService: GetMatchService,
+    primaryService: GeneratePrimaryMatchService
   ) {
     this.matchService = matchService;
     this.editService = editService;
     this.getService = getService;
+    this.primaryService = primaryService;
   }
 
   async generateMatch(
@@ -43,7 +47,7 @@ export class MatchController {
   }
 
   private async generatePrimary(): Promise<Result.Result<Error, matchJSON[][]>> {
-    const res = await this.matchService.generatePrimaryMatch();
+    const res = await this.primaryService.generatePrimaryMatch();
     if (Result.isErr(res)) {
       return Result.err(res[1]);
     }

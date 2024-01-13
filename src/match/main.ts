@@ -8,6 +8,7 @@ import { EditMatchService } from './service/edit.js';
 import { ReconstructMatchArgs } from './match.js';
 import { GetMatchService } from './service/get.js';
 import { GenerateRankingService } from './service/generateRanking.js';
+import { GeneratePrimaryMatchService } from './service/generatePrimary.js';
 
 export const matchHandler = new Hono();
 const repository = await JSONMatchRepository.new();
@@ -19,7 +20,8 @@ const generateService = new GenerateMatchService(
 );
 const editService = new EditMatchService(repository);
 const getService = new GetMatchService(repository);
-const controller = new MatchController(generateService, editService, getService);
+const primaryService = new GeneratePrimaryMatchService(entryRepository, repository);
+const controller = new MatchController(generateService, editService, getService, primaryService);
 matchHandler.get('/:type', async (c) => {
   const { type } = c.req.param();
   const res = await controller.getMatchByType(type);
