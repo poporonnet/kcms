@@ -47,7 +47,11 @@ export class MatchController {
     if (Result.isErr(res)) {
       return Result.err(res[1]);
     }
-    return Result.ok(res[1].map((i) => i.map(this.toJSON)));
+    return Result.ok(
+      res[1].map((i) => {
+        return i.map((v) => this.toJSON(v.toDomain()));
+      })
+    );
   }
 
   async editMatch(id: string, args: matchUpdateJSON): Promise<Result.Result<Error, matchJSON>> {

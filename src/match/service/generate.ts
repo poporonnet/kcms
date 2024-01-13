@@ -132,9 +132,7 @@ export class GenerateMatchService {
       }
     }
 
-    for (const v of matches) {
-      await this.matchRepository.create(v);
-    }
+    await this.matchRepository.createBulk(matches);
 
     return Result.ok(matches);
   }

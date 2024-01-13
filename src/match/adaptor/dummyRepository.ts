@@ -14,6 +14,11 @@ export class DummyMatchRepository implements MatchRepository {
     return Result.ok(match);
   }
 
+  public async createBulk(matches: Match[]): Promise<Result.Result<Error, Match[]>> {
+    this.data.push(...matches);
+    return Result.ok(matches);
+  }
+
   public async findByID(id: string): Promise<Option.Option<Match>> {
     const match = this.data.find((m) => m.id === id);
     if (!match) {

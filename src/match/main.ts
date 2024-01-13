@@ -7,11 +7,16 @@ import { Result } from '@mikuroxina/mini-fn';
 import { EditMatchService } from './service/edit.js';
 import { ReconstructMatchArgs } from './match.js';
 import { GetMatchService } from './service/get.js';
+import { GenerateRankingService } from './service/generateRanking.js';
 
 export const matchHandler = new Hono();
 const repository = await JSONMatchRepository.new();
 const entryRepository = await JSONEntryRepository.new();
-const generateService = new GenerateMatchService(entryRepository, repository);
+const generateService = new GenerateMatchService(
+  entryRepository,
+  repository,
+  new GenerateRankingService(repository)
+);
 const editService = new EditMatchService(repository);
 const getService = new GetMatchService(repository);
 const controller = new MatchController(generateService, editService, getService);
