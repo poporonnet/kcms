@@ -19,7 +19,7 @@ type BaseTuple<T, L extends number, Tup extends T[] = []> = Tup['length'] extend
   : BaseTuple<T, L, [T, ...Tup]>;
 type Tuple<T, L extends number> = BaseTuple<T, L>;
 
-export class GenerateMatchService {
+export class GenerateFinalMatchService {
   private readonly FINAL_TOURNAMENT_COUNT = 8;
   private readonly entryRepository: EntryRepository;
   private readonly matchRepository: MatchRepository;

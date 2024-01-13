@@ -1,37 +1,37 @@
 import { Match } from '../match/match.js';
-import { TestEntrySet } from './entry.js';
+import { TestEntryData, TestEntrySet } from './entry.js';
 import { Entry } from '../entry/entry.js';
 
 // ToDo: もっとデータ数を増やす
-// const TestMatchData = {
-//   ElementaryPrimary: Match.reconstruct({
-//     id: '1',
-//     teams: {
-//       left: TestEntryData.ElementaryMultiWalk,
-//       right: TestEntryData.ElementaryWheel,
-//     },
-//     courseIndex: 0,
-//     matchType: 'primary',
-//   }),
-//   ElementaryFinal: Match.reconstruct({
-//     id: '2',
-//     teams: {
-//       left: TestEntryData.ElementaryMultiWalk,
-//       right: TestEntryData.ElementaryWheel,
-//     },
-//     courseIndex: 0,
-//     matchType: 'final',
-//   }),
-//   OpenFinal: Match.reconstruct({
-//     id: '3',
-//     teams: {
-//       left: TestEntryData.OpenMultiWalk,
-//       right: TestEntryData.OpenMultiWalk2,
-//     },
-//     courseIndex: 0,
-//     matchType: 'final',
-//   }),
-// };
+export const TestMatchData = {
+  ElementaryPrimary: Match.reconstruct({
+    id: '1',
+    teams: {
+      left: TestEntryData.ElementaryMultiWalk,
+      right: TestEntryData.ElementaryWheel,
+    },
+    courseIndex: 0,
+    matchType: 'primary',
+  }),
+  ElementaryFinal: Match.reconstruct({
+    id: '2',
+    teams: {
+      left: TestEntryData.ElementaryMultiWalk,
+      right: TestEntryData.ElementaryWheel,
+    },
+    courseIndex: 0,
+    matchType: 'final',
+  }),
+  OpenFinal: Match.reconstruct({
+    id: '3',
+    teams: {
+      left: TestEntryData.OpenMultiWalk,
+      right: TestEntryData.OpenMultiWalk2,
+    },
+    courseIndex: 0,
+    matchType: 'final',
+  }),
+};
 
 type result = {
   teamID: string;

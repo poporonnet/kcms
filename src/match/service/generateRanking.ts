@@ -1,4 +1,4 @@
-import { TournamentRank } from './generate.js';
+import { TournamentRank } from './generateFinal.js';
 import { Result } from '@mikuroxina/mini-fn';
 import { isMatchResultPair } from '../match.js';
 import { MatchRepository } from './repository.js';

@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { GenerateMatchService } from './service/generate.js';
+import { GenerateFinalMatchService } from './service/generateFinal.js';
 import { JSONMatchRepository } from './adaptor/json.js';
 import { JSONEntryRepository } from '../entry/adaptor/json.js';
 import { MatchController } from './controller.js';
@@ -13,7 +13,7 @@ import { GeneratePrimaryMatchService } from './service/generatePrimary.js';
 export const matchHandler = new Hono();
 const repository = await JSONMatchRepository.new();
 const entryRepository = await JSONEntryRepository.new();
-const generateService = new GenerateMatchService(
+const generateService = new GenerateFinalMatchService(
   entryRepository,
   repository,
   new GenerateRankingService(repository)

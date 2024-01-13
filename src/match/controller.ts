@@ -1,4 +1,4 @@
-import { GenerateMatchService } from './service/generate.js';
+import { GenerateFinalMatchService } from './service/generateFinal.js';
 import { Result } from '@mikuroxina/mini-fn';
 import { Match } from './match.js';
 import { EditMatchService } from './service/edit.js';
@@ -7,13 +7,13 @@ import { GetMatchService } from './service/get.js';
 import { GeneratePrimaryMatchService } from './service/generatePrimary.js';
 
 export class MatchController {
-  private readonly matchService: GenerateMatchService;
+  private readonly matchService: GenerateFinalMatchService;
   private readonly primaryService: GeneratePrimaryMatchService;
   private readonly editService: EditMatchService;
   private readonly getService: GetMatchService;
 
   constructor(
-    matchService: GenerateMatchService,
+    matchService: GenerateFinalMatchService,
     editService: EditMatchService,
     getService: GetMatchService,
     primaryService: GeneratePrimaryMatchService
