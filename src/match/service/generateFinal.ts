@@ -35,9 +35,7 @@ export class GenerateFinalMatchService {
     this.rankingService = rankingService;
   }
 
-  async generateFinalMatch(
-    category: 'elementary' | 'open'
-  ): Promise<Result.Result<Error, Match[]>> {
+  async handle(category: 'elementary' | 'open'): Promise<Result.Result<Error, Match[]>> {
     /*
     初期対戦表を生成
     1 vs 8, 4 vs 5, 2 vs 7, 3 vs 6 (数字は順位)

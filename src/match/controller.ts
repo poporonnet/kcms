@@ -79,7 +79,7 @@ export class MatchController {
     if (!(category === 'elementary' || category === 'open')) {
       return Result.err(new Error('invalid match type'));
     }
-    const res = await this.matchService.generateFinalMatch(category);
+    const res = await this.matchService.handle(category);
     if (Result.isErr(res)) {
       return Result.err(res[1]);
     }
