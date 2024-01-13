@@ -5,8 +5,8 @@ import { Option, Result } from '@mikuroxina/mini-fn';
 export class DummyMatchRepository implements MatchRepository {
   private readonly data: Match[];
 
-  constructor() {
-    this.data = [];
+  constructor(data?: Match[]) {
+    this.data = data ?? [];
   }
 
   public async create(match: Match): Promise<Result.Result<Error, Match>> {

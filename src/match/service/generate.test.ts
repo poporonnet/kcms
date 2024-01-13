@@ -4,6 +4,7 @@ import { DummyRepository } from '../../entry/adaptor/dummyRepository.js';
 import { Entry } from '../../entry/entry.js';
 import { Result } from '@mikuroxina/mini-fn';
 import { DummyMatchRepository } from '../adaptor/dummyRepository.js';
+import { GenerateRankingService } from './generateRanking.js';
 
 const generateDummyData = (n: number): Entry[] => {
   const res: Entry[] = Array<Entry>();
@@ -26,7 +27,8 @@ const generateDummyData = (n: number): Entry[] => {
 describe('予選の対戦表を正しく生成できる', () => {
   const repository = new DummyRepository();
   const matchRepository = new DummyMatchRepository();
-  const service = new GenerateMatchService(repository, matchRepository);
+  const generateRankingService = new GenerateRankingService(matchRepository);
+  const service = new GenerateMatchService(repository, matchRepository, generateRankingService);
   const dummyData = generateDummyData(32);
   console.log(dummyData.length);
   dummyData.map((v) => repository.create(v));

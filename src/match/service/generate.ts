@@ -1,9 +1,11 @@
 import { EntryRepository } from '../../entry/repository.js';
 import { Result } from '@mikuroxina/mini-fn';
 import { Entry } from '../../entry/entry.js';
-import { isMatchResultPair, Match } from '../match.js';
+import { Match } from '../match.js';
 import { MatchRepository } from './repository.js';
 import * as crypto from 'crypto';
+import { MatchDTO } from './get.js';
+import { GenerateRankingService } from './generateRanking.js';
 
 export type TournamentRank = {
   rank: number;
@@ -23,15 +25,20 @@ export class GenerateMatchService {
   private readonly FINAL_TOURNAMENT_COUNT = 8;
   private readonly entryRepository: EntryRepository;
   private readonly matchRepository: MatchRepository;
+  private readonly rankingService: GenerateRankingService;
 
-  constructor(entryRepository: EntryRepository, matchRepository: MatchRepository) {
+  constructor(
+    entryRepository: EntryRepository,
+    matchRepository: MatchRepository,
+    rankingService: GenerateRankingService
+  ) {
     this.entryRepository = entryRepository;
     this.matchRepository = matchRepository;
+    this.rankingService = rankingService;
   }
 
   // 予選対戦表の生成
-  async generatePrimaryMatch(): Promise<Result.Result<Error, Match[][]>> {
-    // ToDo: DTOを返すようにする
+  async generatePrimaryMatch(): Promise<Result.Result<Error, MatchDTO[][]>> {
     const res = await this.entryRepository.findAll();
     if (Result.isErr(res)) {
       return Result.err(res[1]);
@@ -80,7 +87,7 @@ export class GenerateMatchService {
       }
     }
 
-    return Result.ok(tmpMatches);
+    return Result.ok(tmpMatches.map((v) => v.map(MatchDTO.fromDomain)));
   }
 
   async generateFinalMatch(
@@ -91,7 +98,7 @@ export class GenerateMatchService {
     1 vs 8, 4 vs 5, 2 vs 7, 3 vs 6 (数字は順位)
      */
 
-    const [elementaryRank] = await this.generateRanking();
+    const [elementaryRank] = await this.rankingService.handle();
     const openRank = await this.generateOpenTournament();
     const [elementaryTournament, openTournament] = [
       this.generateTournamentPair(this.generateTournament(elementaryRank)),
@@ -130,90 +137,6 @@ export class GenerateMatchService {
     }
 
     return Result.ok(matches);
-  }
-
-  // ToDo: 本戦の順位を計算できるようにする
-  // - ToDo: (予選)タイムと得点が同じ場合だったときの順位決定処理
-  async generateRanking(): Promise<TournamentRank[][]> {
-    const res = await this.matchRepository.findAll();
-    if (Result.isErr(res)) {
-      throw res[1];
-    }
-    // チームごとの得点/時間
-    const rankBase: TournamentRank[] = [];
-    // チームごとの得点を計算したい
-    // -> まず全ての対戦を取得
-    for (const v of res[1]) {
-      // 本選は関係ないので飛ばす
-      if (v.matchType !== 'primary') continue;
-      // 終わってない場合は飛ばす
-      if (!v.results) continue;
-      if (!isMatchResultPair(v.results)) continue;
-
-      // 対戦の結果を取って、tournamentRankを作る
-      const left = v.results.left;
-      const right = v.results.right;
-
-      // 左チームの結果を追加
-      const leftRank = rankBase.find((v) => v.entry.id === left.teamID);
-      if (!leftRank) {
-        // なければ作る
-        rankBase.push(<TournamentRank>{
-          rank: 0,
-          points: left.points,
-          time: left.time,
-          entry: v.teams.left,
-        });
-      } else {
-        // あれば足す
-        leftRank.points += left.points;
-        leftRank.time += left.time;
-      }
-
-      // 右チームの結果を追加
-      const rightRank = rankBase.find((v) => v.entry.id === right.teamID);
-      if (!rightRank) {
-        // なければ作る
-        rankBase.push(<TournamentRank>{
-          rank: 0,
-          points: right.points,
-          time: right.time,
-          entry: v.teams.right,
-        });
-      } else {
-        // あれば足す
-        rightRank.points += right.points;
-        rightRank.time += right.time;
-      }
-    }
-
-    // 部門ごとに分ける [0]: Elementary, [1]: Open
-    const categoryRank: TournamentRank[][] = [[], []];
-    for (const v of rankBase) {
-      if (v.entry.category === 'Elementary') {
-        categoryRank[0].push(v);
-      }
-      if (v.entry.category === 'Open') {
-        categoryRank[1].push(v);
-      }
-    }
-
-    const sortAndRanking = (t: TournamentRank[]) => {
-      // ソートする
-      t.sort((a, b) => {
-        if (a.points === b.points) {
-          // 得点が同じならゴールタイムが*早い順に*ソート (得点とは逆)
-          return a.time - b.time;
-        }
-        return b.points - a.points;
-      });
-      // ソートが終わったら順位をつける
-      return t.map((v, i) => {
-        v.rank = i + 1;
-        return v;
-      });
-    };
-    return [sortAndRanking(categoryRank[0]), sortAndRanking(categoryRank[1])];
   }
 
   // generateOpenTournament オープン部門は予選を行わないのでランキング(?)を無理やり作る
