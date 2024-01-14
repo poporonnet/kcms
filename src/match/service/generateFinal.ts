@@ -44,50 +44,57 @@ export class GenerateFinalMatchService {
     1 vs 8, 4 vs 5, 2 vs 7, 3 vs 6 (数字は順位)
      */
 
+    if (category === 'open') return this.generateOpenMatches();
     const [elementaryRank] = await this.rankingService.handle();
-    const openRank = await this.generateOpenTournament();
-    const [elementaryTournament, openTournament] = [
-      this.generateTournamentPair(this.generateTournament(elementaryRank)),
-      // fixme: unwrapやめる
-      this.generateTournamentPair(this.generateTournament(Result.unwrap(openRank))),
-    ];
+
+    const elementaryTournament = this.generateTournamentPair(
+      this.generateTournament(elementaryRank)
+    );
 
     const matches: Match[] = [];
-    if (category === 'elementary') {
-      for (const v of elementaryTournament) {
-        const id = this.idGenerator.generate<MatchID>();
-        if (Result.isErr(id)) {
-          return Result.err(id[1]);
-        }
+    for (const v of elementaryTournament) {
+      const id = this.idGenerator.generate<MatchID>();
+      if (Result.isErr(id)) {
+        return Result.err(id[1]);
+      }
 
-        matches.push(
-          Match.new({
-            id: id[1] as MatchID,
-            matchType: 'final',
-            teams: { left: v[0].entry, right: v[1].entry },
-            courseIndex: 0,
-          })
-        );
-      }
-    } else {
-      for (const v of openTournament) {
-        const id = this.idGenerator.generate<MatchID>();
-        if (Result.isErr(id)) {
-          return Result.err(id[1]);
-        }
-        matches.push(
-          Match.new({
-            id: id[1] as MatchID,
-            matchType: 'final',
-            teams: { left: v[0].entry, right: v[1].entry },
-            courseIndex: 0,
-          })
-        );
-      }
+      matches.push(
+        Match.new({
+          id: id[1] as MatchID,
+          matchType: 'final',
+          teams: { left: v[0].entry, right: v[1].entry },
+          courseIndex: 0,
+        })
+      );
     }
 
     await this.matchRepository.createBulk(matches);
 
+    return Result.ok(matches);
+  }
+
+  async generateOpenMatches(): Promise<Result.Result<Error, Match[]>> {
+    const openRank = await this.generateOpenTournament();
+    const openTournament = this.generateTournamentPair(
+      this.generateTournament(Result.unwrap(openRank))
+    );
+    const matches: Match[] = [];
+    for (const v of openTournament) {
+      const id = this.idGenerator.generate<MatchID>();
+      if (Result.isErr(id)) {
+        return Result.err(id[1]);
+      }
+      matches.push(
+        Match.new({
+          id: id[1] as MatchID,
+          matchType: 'final',
+          teams: { left: v[0].entry, right: v[1].entry },
+          courseIndex: 0,
+        })
+      );
+    }
+
+    await this.matchRepository.createBulk(matches);
     return Result.ok(matches);
   }
 
@@ -119,7 +126,8 @@ export class GenerateFinalMatchService {
     const genTournament = (
       ids: TournamentRank[] | Tournament[] | Tournament
     ): TournamentPermutation => {
-      if (ids.length == 2) return ids as TournamentPermutation;
+      if (ids.length === 2) return ids as TournamentPermutation;
+      if (ids.length === 0) throw new Error('invalid length');
 
       const pairs = new Array(ids.length / 2)
         .fill(null)
