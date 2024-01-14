@@ -1,7 +1,7 @@
 import { EntryRepository } from '../../entry/repository.js';
-import { Result } from '@mikuroxina/mini-fn';
+import { Result, Option } from '@mikuroxina/mini-fn';
 import { Entry } from '../../entry/entry.js';
-import { MatchID, Match } from '../match.js';
+import { MatchID, Match, MatchResultFinalPair } from '../match.js';
 import { MatchRepository } from './repository.js';
 import { GenerateRankingService } from './generateRanking.js';
 import { SnowflakeIDGenerator } from '../../id/main.js';
@@ -39,16 +39,11 @@ export class GenerateFinalMatchService {
   }
 
   async handle(category: 'elementary' | 'open'): Promise<Result.Result<Error, Match[]>> {
-    /*
-    初期対戦表を生成
-    1 vs 8, 4 vs 5, 2 vs 7, 3 vs 6 (数字は順位)
-     */
-
     if (category === 'open') return this.generateOpenMatches();
     const [elementaryRank] = await this.rankingService.handle();
 
     const elementaryTournament = this.generateTournamentPair(
-      this.generateTournament(elementaryRank)
+      this.generateTournament1st(elementaryRank)
     );
 
     const matches: Match[] = [];
@@ -76,7 +71,7 @@ export class GenerateFinalMatchService {
   async generateOpenMatches(): Promise<Result.Result<Error, Match[]>> {
     const openRank = await this.generateOpenTournament();
     const openTournament = this.generateTournamentPair(
-      this.generateTournament(Result.unwrap(openRank))
+      this.generateTournament1st(Result.unwrap(openRank))
     );
     const matches: Match[] = [];
     for (const v of openTournament) {
@@ -119,7 +114,8 @@ export class GenerateFinalMatchService {
     );
   }
 
-  private generateTournament(ranks: TournamentRank[]): TournamentPermutation {
+  // トーナメントの1回戦を生成する
+  private generateTournament1st(ranks: TournamentRank[]): TournamentPermutation {
     // ランキング上位8チームを取得
     ranks = ranks.slice(0, this.FINAL_TOURNAMENT_COUNT);
 
@@ -136,6 +132,129 @@ export class GenerateFinalMatchService {
     };
 
     return genTournament(ranks);
+  }
+
+  // トーナメントのn回戦を生成する
+  public async generateTournementN(n: number, category: 'Elementary' | 'Open') {
+    // 結果を取得
+    const match = await this.matchRepository.findByType('final');
+    if (Option.isNone(match)) {
+      return Result.err(new Error('Match not found.'));
+    }
+    // 指定したカテゴリの試合だけ取得
+    const categoryMatch = match[1].filter((v) => v.teams.left!.category === category);
+
+    // 終了している試合に絞る
+    const finishedMatch = categoryMatch.filter((v) => {
+      // 終了している条件: resultsがundefinedでない, results.winnerIDに値がある
+      if (v.results === undefined) return false;
+      return (v.results as MatchResultFinalPair).winnerID !== undefined;
+    });
+    console.log('試合終了数: ', finishedMatch.length);
+    // N回戦まで終了しているか
+    const finishedN = this.isGenerative(this.FINAL_TOURNAMENT_COUNT, finishedMatch.length);
+    if (Result.isErr(finishedN)) {
+      return Result.err(finishedN[1]);
+    }
+    console.log('N回戦まで終了しているか: ', finishedN[1]);
+    // n回戦まで終了していない場合はエラー
+    if (finishedN[1] !== n) {
+      return Result.err(new Error('Invalid number of completed matches.'));
+    }
+
+    // 終了しているのであれば、N段目の試合を生成する
+    // 生成する試合の数
+    const matchCount = this.FINAL_TOURNAMENT_COUNT / ((finishedN[1] + 1) * 2);
+    console.log(
+      `matchCount=${this.FINAL_TOURNAMENT_COUNT} / {(${finishedN[1]} +1) * 2}`,
+      matchCount
+    );
+
+    // 試合を生成する
+    // 左から2試合ずつ取り出す
+    const matches = this.eachSlice(finishedMatch, 2);
+    // ToDo: Debug
+    matches.map((v) => {
+      console.log(v.map((vv) => [vv.teams.left!.id, vv.teams.right!.id]));
+    });
+
+    // 取り出したら、その中で勝者を取り出す
+    const pickWinner = (match: [Match, Match]): Entry[] => {
+      const res: Entry[] = new Array<Entry>();
+      for (const v of match) {
+        const winnerID = (v.results as MatchResultFinalPair).winnerID;
+        if (v.teams.left!.id == winnerID) {
+          res.push(v.teams.left!);
+        } else {
+          res.push(v.teams.right!);
+        }
+      }
+      return res;
+    };
+    const teamPair: Entry[][] = [];
+    for (const v of matches) {
+      teamPair.push(pickWinner(v));
+    }
+
+    // ペアから試合を作る
+    const newMatches: Match[] = [];
+    for (const v of teamPair) {
+      const id = this.idGenerator.generate<MatchID>();
+      if (Result.isErr(id)) {
+        return Result.err(id[1]);
+      }
+      newMatches.push(
+        Match.new({
+          id: id[1] as MatchID,
+          matchType: 'final',
+          teams: { left: v[0], right: v[1] },
+          courseIndex: 0,
+        })
+      );
+    }
+    const res = await this.matchRepository.createBulk(newMatches);
+    if (Result.isErr(res)) {
+      return Result.err(res[1]);
+    }
+
+    return newMatches;
+  }
+
+  /*
+   * @param e エントリー数
+   * @param completedMatches 終了した試合数
+   * @returns N回戦まで終了
+   * */
+  public isGenerative(e: number, completedMatches: number): Result.Result<Error, number> {
+    // Eが2の冪乗であることを確認
+    if (Math.log2(e) % 1 !== 0) {
+      return Result.err(new Error('E must be a power of 2.'));
+    }
+
+    // 終了した試合数が妥当か検証
+    if (completedMatches > e - 1 || completedMatches < 0) {
+      return Result.err(new Error('Invalid number of completed matches.'));
+    }
+
+    // 進行段階を計算
+    let rounds = -1; // 全ての試合が終了している場合は-1を返す
+    let remainingMatches = e;
+    while (remainingMatches > 1) {
+      remainingMatches /= 2;
+      rounds++;
+
+      if (completedMatches < e - remainingMatches) {
+        // 全ての試合が終了していない場合
+        break;
+      }
+    }
+    if (completedMatches === e - 1) return Result.ok(-1);
+    // 1回戦しかできない場合は0を返す
+    if (rounds === 0 && completedMatches < e) {
+      return Result.ok(0);
+    }
+
+    return Result.ok(rounds);
   }
 
   private eachSlice = <T, L extends number>(array: T[], size: L) =>
