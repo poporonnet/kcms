@@ -10,7 +10,7 @@ import { Result, Option } from '@mikuroxina/mini-fn';
 import { MatchResultFinalPair } from '../match.js';
 import { EntryID } from '../../entry/entry.js';
 
-describe('GenerateFinalMatchService', () => {
+describe('GenerateFinal1st', () => {
   const repository = new DummyMatchRepository(TestRankingMatchData);
   const entryRepository = new DummyRepository([
     TestEntrySet.ElementaryMultiWalk[101],
@@ -62,11 +62,45 @@ describe('GenerateFinalMatchService', () => {
   });
 
   // ToDo: オープン部門のテスト
+});
 
+describe('GenerateFinalNth', () => {
+  const repository = new DummyMatchRepository(TestRankingMatchData);
+  const entryRepository = new DummyRepository([
+    TestEntrySet.ElementaryMultiWalk[101],
+    TestEntrySet.ElementaryMultiWalk[102],
+    TestEntrySet.ElementaryMultiWalk[103],
+
+    TestEntrySet.ElementaryWheel[107],
+    TestEntrySet.ElementaryWheel[108],
+    TestEntrySet.ElementaryWheel[109],
+  ]);
+  const rankingService = new GenerateRankingService(repository);
+  const service = new GenerateFinalMatchService(
+    entryRepository,
+    repository,
+    rankingService,
+    new SnowflakeIDGenerator(1, () => BigInt(new Date().getTime()))
+  );
+  const expected2nd = [
+    {
+      left: {
+        id: '101',
+      },
+      right: {
+        id: '104',
+      },
+    },
+    {
+      left: {
+        id: '102',
+      },
+      right: {
+        id: '103',
+      },
+    },
+  ];
   it('n段目まで終わっているかの判断が正しくできる', async () => {
-    for (let i = 0; i < 8; i++) {
-      console.log(i, service.isGenerative(8, i)[1]);
-    }
     /*
       境界値分析
 
@@ -99,7 +133,7 @@ describe('GenerateFinalMatchService', () => {
     expect(Result.unwrap(service.isGenerative(Entry, 7))).toBe(-1);
     // エラー
     expect(service.isGenerative(Entry, 8)[1]).toStrictEqual(
-      new Error('Invalid number of completed matches.')
+      new Error('8 is invalid number of completed matches.')
     );
   });
 
@@ -122,8 +156,6 @@ describe('GenerateFinalMatchService', () => {
       new SnowflakeIDGenerator(1, () => BigInt(new Date().getTime()))
     );
     // ------ ここまで初期化 -----
-    // 1回戦目は生成しておく
-    await service.handle('elementary');
     // 1回目の結果を入れるために結果を取ってくる
     const res = Option.unwrap(await repository.findByType('final'));
     // 結果を入れ替える
@@ -131,11 +163,18 @@ describe('GenerateFinalMatchService', () => {
       v.results = TestData[`${v.teams.left!.id}-${v.teams.right!.id}`];
       await repository.update(v);
     });
-    console.log(Option.unwrap(await repository.findByType('final')));
 
-    const actual = await service.generateTournementN(1, 'Elementary');
-    console.log('ac', actual);
-    expect(1).toBe(1);
+    const actual = await service.generateTournamentNth(1, 'Elementary');
+    Result.unwrap(actual).map((v, i) => {
+      expect({
+        left: {
+          id: v.teams.left!.id,
+        },
+        right: {
+          id: v.teams.right!.id,
+        },
+      }).toStrictEqual(expected2nd[i]);
+    });
   });
 });
 

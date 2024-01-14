@@ -135,7 +135,7 @@ export class GenerateFinalMatchService {
   }
 
   // トーナメントのn回戦を生成する
-  public async generateTournementN(n: number, category: 'Elementary' | 'Open') {
+  public async generateTournamentNth(n: number, category: 'Elementary' | 'Open') {
     // 結果を取得
     const match = await this.matchRepository.findByType('final');
     if (Option.isNone(match)) {
@@ -150,33 +150,19 @@ export class GenerateFinalMatchService {
       if (v.results === undefined) return false;
       return (v.results as MatchResultFinalPair).winnerID !== undefined;
     });
-    console.log('試合終了数: ', finishedMatch.length);
     // N回戦まで終了しているか
     const finishedN = this.isGenerative(this.FINAL_TOURNAMENT_COUNT, finishedMatch.length);
     if (Result.isErr(finishedN)) {
       return Result.err(finishedN[1]);
     }
-    console.log('N回戦まで終了しているか: ', finishedN[1]);
     // n回戦まで終了していない場合はエラー
     if (finishedN[1] !== n) {
       return Result.err(new Error('Invalid number of completed matches.'));
     }
 
-    // 終了しているのであれば、N段目の試合を生成する
-    // 生成する試合の数
-    const matchCount = this.FINAL_TOURNAMENT_COUNT / ((finishedN[1] + 1) * 2);
-    console.log(
-      `matchCount=${this.FINAL_TOURNAMENT_COUNT} / {(${finishedN[1]} +1) * 2}`,
-      matchCount
-    );
-
     // 試合を生成する
     // 左から2試合ずつ取り出す
     const matches = this.eachSlice(finishedMatch, 2);
-    // ToDo: Debug
-    matches.map((v) => {
-      console.log(v.map((vv) => [vv.teams.left!.id, vv.teams.right!.id]));
-    });
 
     // 取り出したら、その中で勝者を取り出す
     const pickWinner = (match: [Match, Match]): Entry[] => {
@@ -217,7 +203,7 @@ export class GenerateFinalMatchService {
       return Result.err(res[1]);
     }
 
-    return newMatches;
+    return Result.ok(newMatches);
   }
 
   /*
@@ -228,12 +214,12 @@ export class GenerateFinalMatchService {
   public isGenerative(e: number, completedMatches: number): Result.Result<Error, number> {
     // Eが2の冪乗であることを確認
     if (Math.log2(e) % 1 !== 0) {
-      return Result.err(new Error('E must be a power of 2.'));
+      return Result.err(new Error(`E must be a power of 2. ${e} is invalid`));
     }
 
     // 終了した試合数が妥当か検証
     if (completedMatches > e - 1 || completedMatches < 0) {
-      return Result.err(new Error('Invalid number of completed matches.'));
+      return Result.err(new Error(`${completedMatches} is invalid number of completed matches.`));
     }
 
     // 進行段階を計算
