@@ -1,5 +1,4 @@
-export { errorToCode };
-function errorToCode(error: Error): string {
+export function errorToCode(error: Error): string {
   switch (error.message) {
     case "too many members":
       return "TOO_MANY_MEMBERS";
