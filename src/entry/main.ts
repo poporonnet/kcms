@@ -4,7 +4,7 @@ import { entryRequestSchema } from './schema.js';
 import { Controller } from './controller.js';
 import { Option, Result } from '@mikuroxina/mini-fn';
 import { JSONEntryRepository } from './adaptor/json.js';
-import { errorToCode } from './adaptor/errors.ts';
+import { errorToCode } from './adaptor/errors.js';
 
 export const entryHandler = new Hono();
 // export const controller = new Controller(new DummyRepository());
