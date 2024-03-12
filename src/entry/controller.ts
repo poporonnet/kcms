@@ -1,8 +1,9 @@
-import { EntryRepository } from "./repository.js";
-import { EntryService } from "./service/entry.js";
-import { Entry } from "./entry.js";
-import { Result } from "@mikuroxina/mini-fn";
-import { FindEntryService } from "./service/get.js";
+import { EntryRepository } from './repository.js';
+import { EntryService } from './service/entry.js';
+import { Result, Option } from '@mikuroxina/mini-fn';
+import { FindEntryService } from './service/get.js';
+import { DeleteEntryService } from './service/delete.js';
+import { SnowflakeIDGenerator } from '../id/main.js';
 
 interface baseEntry {
   id: string;
@@ -15,24 +16,24 @@ interface baseEntry {
 export class Controller {
   private readonly entry: EntryService;
   private readonly find: FindEntryService;
+  private readonly deleteService: DeleteEntryService;
 
   constructor(repository: EntryRepository) {
-    this.entry = new EntryService(repository);
+    this.entry = new EntryService(
+      repository,
+      new SnowflakeIDGenerator(1, () => BigInt(new Date().getTime()))
+    );
     this.find = new FindEntryService(repository);
+    this.deleteService = new DeleteEntryService(repository);
   }
 
   async create(args: {
     teamName: string;
     members: string[];
     isMultiWalk: boolean;
-    category: "Elementary" | "Open";
+    category: 'Elementary' | 'Open';
   }): Promise<Result.Result<Error, baseEntry>> {
-    const entry = Entry.new({
-      id: "",
-      ...args,
-    });
-
-    const res = await this.entry.create(entry);
+    const res = await this.entry.create(args);
     if (Result.isErr(res)) {
       return Result.err(res[1]);
     }
@@ -55,7 +56,16 @@ export class Controller {
           isMultiWalk: v.isMultiWalk,
           category: v.category,
         };
-      }),
+      })
     );
+  }
+
+  async delete(id: string): Promise<Option.Option<Error>> {
+    const res = await this.deleteService.handle(id);
+    if (Option.isSome(res)) {
+      return Option.some(res[1]);
+    }
+
+    return Option.none();
   }
 }

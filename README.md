@@ -1,16 +1,26 @@
 # kcms
 
-Matz葉ガニロボコン 大会運営支援ツール
+Matz葉がにロボコン 大会運営支援ツール  
+[フロントエンドはこちら](https://github.com/poporonnet/kcmsf)
 
 ## 開発者向け情報
 
 ### requires
 
-- bun(latest)
+- [bun](https://bun.sh/) (latest)
 
 ### サーバーを動作させる
 
 上記必要なものをインストールしてください.
+
+データ保存用の`data.json`を用意してください.
+
+```json
+{
+  "entry": [],
+  "match": []
+}
+```
 
 依存関係のインストール
 
@@ -25,13 +35,20 @@ bun run build
 bun start
 ```
 
-サーバーの起動
+サーバーの起動 (開発向け)
 
 ```bash
 bun dev
 ```
 
 ### Authors/License
+
+| <img src="https://github.com/laminne.png" width="100px"> | <img src="https://github.com/kiharu3112.png" width="100px"> | <img src="https://github.com/tufusa.png" width="100px"> | <img src="https://github.com/speak-mentaiko.png" width="100px"> | <img src="https://github.com/suzune2741.png" width="100px"> |
+| :------------------------------------------------------: | :---------------------------------------------------------: | :-----------------------------------------------------: | :-------------------------------------------------------------: | :---------------------------------------------------------: |
+|            **laminne (T. YAMAMOTO)**<br>🔧 🦀            |                   **kiharu3112**<br>🔧 🦀                   |                   **tufusa**<br>🔧 🦀                   |                    **speak-mentaiko**<br>🔧                     |                    **suzune2741**<br>🔧                     |
+
+🔧: KCMS/KCMSFの開発  
+🦀: 書き込みツール開発
 
 (C) 2023 Poporon Network & Other Contributors  
 MIT License
@@ -43,8 +60,8 @@ MIT License
 - `POST /entry` エントリー
 - `DELETE /entry/{id}` エントリーの取り消し
 - `GET /entry` 全エントリーの取得
-- `GET /match/{categoryType}/{matchType}` 部門の(予選/本選)対戦表
-- `POST /match/{categoryType}/{matchType}` 部門の対戦表を生成
+- `GET /match/{matchType}` 部門の(予選/本選)対戦表
+- `POST /match/{matchType}` 部門の対戦表を生成
 
 ### `POST /entry`
 
@@ -129,7 +146,7 @@ body: `application/json`
 ]
 ```
 
-### `GET /match/{categoryType}/{matchType}`
+### `GET /match/{matchType}`
 
 各部門の本選、予選対戦表を取得します
 
@@ -137,10 +154,8 @@ body: `application/json`
 
 パスパラメータ
 
-- `categoryType`: `"Elementary"|"Open"`
+- `matchType`: `"primary"|"final"`
   - 部門名
-- `matchType`: `"primary" | "final"`
-  - 対戦の種類 (`primary`: 予選, `"final"`: 本選)
 
 #### 出力
 
@@ -152,11 +167,27 @@ body: `application/json`
     // 試合ID
     "id": "43945095",
     // 試合するチームのID
-    "teams": ["30495883404", "93454093"],
+    "teams": [
+      {
+        "id": "30495883404",
+        "teamName": "ニカ.reverse()",
+        "isMultiWalk": false,
+        "category": "Elementary"
+      },
+      {
+        "id": "93454093",
+        "teamName": "カニ.reverse()",
+        "isMultiWalk": false,
+        "category": "Elementary"
+      }
+    ],
     // 対戦の種類
     "matchType": "primary",
     // チームごとの得点 (teamsと同じ順で入る)
     "points": [2, 5],
+    "courseIndex": 1,
+    // チームごとのゴール時間(秒)
+    "time": [50, 61],
     // 勝利チームのID
     "winnerID": "93454093"
   }
@@ -168,19 +199,20 @@ body: `application/json`
 - `UNKNOWN_CATEGORY`: 存在しないカテゴリ
 - `UNKNOWN_MATCH_TYPE`: 存在しない対戦種類
 
-### `POST /match/{categoryType}/{matchType}`
+### `POST /match/{matchType}/{category}`
 
 各部門の本選、予選対戦表を生成します
+※ 既に生成済みの場合は上書きされます
+※ オープン部門の予選対戦表は生成できません(エラーになります)
 
 #### 入力
 
 パスパラメータ
 
-- `categoryType`: `"Elementary"|"Open"`
+- `matchType`: `"final"|"primary"`
   - 部門名
-- `matchType`: `"primary" | "final"`
-  - 対戦の種類 (`primary`: 予選, `"final"`: 本選)
-    body: `application/json`
+- `category`: `"elementary"|"open"`
+  - カテゴリ
 
 ```json
 {}
@@ -196,13 +228,41 @@ body: `application/json`
     // 試合ID
     "id": "43945095",
     // 試合するチームのID
-    "teams": ["30495883404", "93454093"],
+    "teams": {
+      // コート左側チーム
+      "left": {
+        "id": "30495883404",
+        "teamName": "ニカ.reverse()",
+        "isMultiWalk": false,
+        "category": "Elementary"
+      },
+      // コート右側チーム
+      "right": {
+        "id": "93454093",
+        "teamName": "カニ.reverse()",
+        "isMultiWalk": false,
+        "category": "Elementary"
+      }
+    },
     // 対戦の種類
     "matchType": "primary",
-    // チームごとの得点 (teamsと同じ順で入る)
-    "points": [2, 5],
-    // チームごとのゴール時間(秒)
-    "time": [50, 61],
+    // 対戦結果
+    "results": {
+      // 左チームの結果
+      "left": {
+        "teamID": "30495883404",
+        "points": 0,
+        "time": 300
+      },
+      // 右チームの結果
+      "right": {
+        "teamID": "93454093",
+        "points": 7,
+        "time": 60
+      }
+    },
+    // コース番号(0始まり)
+    "courseIndex": 1,
     // 勝利チームのID
     "winnerID": "93454093"
   }
@@ -213,3 +273,79 @@ body: `application/json`
 
 - `UNKNOWN_CATEGORY`: 存在しないカテゴリ
 - `UNKNOWN_MATCH_TYPE`: 存在しない対戦種類
+
+### `PUT /match/{id}`
+
+指定した試合の結果を入力します.
+
+#### 入力
+
+パスパラメータ
+
+- id: `string`
+  - 試合ID
+
+body: `application/json`
+
+```json
+{
+  "results": {
+    "left": {
+      "teamID": "8e28115e-7fa4-4359-8a68-02d1c9f7b8f6",
+      "points": 0,
+      "time": 300
+    },
+    "right": {
+      "teamID": "31dface0-a745-43f1-8bd6-375e0082f5b1",
+      "points": 7,
+      "time": 60
+    }
+  }
+}
+```
+
+#### 出力
+
+##### `200 OK`
+
+更新しました
+
+```json
+{
+  "id": "8ce4ea11-acd8-4c2d-a13c-09eb24d091fd",
+  "teams": {
+    "left": {
+      "id": "8e28115e-7fa4-4359-8a68-02d1c9f7b8f6",
+      "teamName": "チーム0",
+      "isMultiWalk": true,
+      "category": "Open"
+    },
+    "right": {
+      "id": "31dface0-a745-43f1-8bd6-375e0082f5b1",
+      "teamName": "チーム1",
+      "isMultiWalk": true,
+      "category": "Elementary"
+    }
+  },
+  "matchType": "primary",
+  "courseIndex": 0,
+  "results": {
+    "left": {
+      "teamID": "8e28115e-7fa4-4359-8a68-02d1c9f7b8f6",
+      "points": 0,
+      "time": 300
+    },
+    "right": {
+      "teamID": "31dface0-a745-43f1-8bd6-375e0082f5b1",
+      "points": 7,
+      "time": 60
+    }
+  }
+}
+```
+
+## リンク
+
+[書き込みツール フロントエンド](https://github.com/poporonnet/kanicon-writer-front)
+
+[書き込みツール コンパイルサーバ](https://github.com/poporonnet/kanicc)

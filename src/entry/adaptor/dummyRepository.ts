@@ -1,11 +1,11 @@
-import { EntryRepository } from "../repository.js";
-import { Option, Result } from "@mikuroxina/mini-fn";
-import { Entry } from "../entry.js";
+import { EntryRepository } from '../repository.js';
+import { Option, Result } from '@mikuroxina/mini-fn';
+import { Entry } from '../entry.js';
 
 export class DummyRepository implements EntryRepository {
   private data: Array<Entry>;
-  constructor() {
-    this.data = [];
+  constructor(data?: Array<Entry>) {
+    this.data = data ?? [];
   }
 
   async create(entry: Entry): Promise<Result.Result<Error, Entry>> {
@@ -31,6 +31,11 @@ export class DummyRepository implements EntryRepository {
 
   async findAll(): Promise<Result.Result<Error, Array<Entry>>> {
     return Result.ok(this.data);
+  }
+
+  async delete(id: string): Promise<Option.Option<Error>> {
+    this.data = this.data.filter((e) => e.id !== id);
+    return Option.none();
   }
 
   reset() {

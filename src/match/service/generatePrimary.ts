@@ -1,31 +1,37 @@
-import { EntryRepository } from "../../entry/repository.js";
-import { Result } from "@mikuroxina/mini-fn";
-import { Entry } from "../../entry/entry.js";
-import { Match } from "../match.js";
-import { MatchRepository } from "./repository.js";
+import { Result } from '@mikuroxina/mini-fn';
+import { MatchDTO } from './get.js';
+import { Entry } from '../../entry/entry.js';
+import { MatchID, Match } from '../match.js';
+import { EntryRepository } from '../../entry/repository.js';
+import { MatchRepository } from './repository.js';
+import { SnowflakeIDGenerator } from '../../id/main.js';
 
-export class GenerateMatchService {
-  private readonly COURSE_COUNT = 3;
+export class GeneratePrimaryMatchService {
   private readonly entryRepository: EntryRepository;
   private readonly matchRepository: MatchRepository;
+  private readonly idGenerator: SnowflakeIDGenerator;
+  private readonly COURSE_COUNT = 3;
 
   constructor(
     entryRepository: EntryRepository,
     matchRepository: MatchRepository,
+    idGenerator: SnowflakeIDGenerator
   ) {
     this.entryRepository = entryRepository;
     this.matchRepository = matchRepository;
+    this.idGenerator = idGenerator;
   }
 
   // 予選対戦表の生成
-  async generatePrimaryMatch(): Promise<Result.Result<Error, Match[][]>> {
+  async generatePrimaryMatch(): Promise<Result.Result<Error, MatchDTO[][]>> {
     const res = await this.entryRepository.findAll();
     if (Result.isErr(res)) {
       return Result.err(res[1]);
     }
 
     // 分ける(N/M = A...B M[i]にA人、B人を少ない方から)
-    const entry = res[1];
+    const entry = res[1].filter((v) => v.category === 'Elementary');
+    console.log(entry.length);
     const entryNum = entry.length;
     // コースごとの参加者数
     const entryPerCourse = Math.floor(entryNum / this.COURSE_COUNT);
@@ -46,13 +52,19 @@ export class GenerateMatchService {
     for (let i = 0; i < courses.length; i++) {
       const courseMatches: Match[] = [];
       for (let k = 0; k < courses[i].length; k++) {
-        // 対戦相手のインデックス
-        const opponentIndex = k + 1 >= courses[i].length ? 0 : k + 1;
-        // ToDo: IDの生成
+        const courseLength = courses[i].length;
+        const gap = Math.floor(courseLength / 2);
+        const opponentIndex = k + gap >= courseLength ? k + gap - courseLength : k + gap;
+
+        const id = this.idGenerator.generate<MatchID>();
+        if (Result.isErr(id)) {
+          return Result.err(id[1]);
+        }
+
         const match = Match.new({
-          id: "",
-          matchType: "primary",
-          teams: [courses[i][k], courses[i][opponentIndex]],
+          id: id[1] as MatchID,
+          matchType: 'primary',
+          teams: { left: courses[i][k], right: courses[i][opponentIndex] },
           courseIndex: i,
         });
         courseMatches.push(match);
@@ -66,8 +78,6 @@ export class GenerateMatchService {
       }
     }
 
-    return Result.ok(tmpMatches);
+    return Result.ok(tmpMatches.map((v) => v.map(MatchDTO.fromDomain)));
   }
-
-  // ToDo: 本選トーナメント対戦表の生成
 }
