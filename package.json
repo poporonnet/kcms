@@ -6,13 +6,15 @@
   "main": "main.js",
   "scripts": {
     "start": "bun ./build/main.js",
-    "dev": "bun run --hot ./src/main.ts",
-    "build": "esbuild ./src/main.ts --bundle --sourcemap --platform=node --target=node16 --format=esm --packages=external --outfile=build/main.js",
-    "lint": "eslint --cache 'src/**/**.ts'",
+    "dev": "bun run --hot ./pkg/main.ts",
+    "build": "esbuild ./pkg/main.ts --bundle --sourcemap --platform=node --target=node16 --format=esm --packages=external --outfile=build/main.js",
     "format": "prettier . --write",
     "test": "vitest run",
     "coverage": "vitest run --coverage",
-    "check": "prettier --check 'src/**/**.ts' && tsc -p . --noEmit"
+    "check": "bun run check:lint && bun run check:type && bun run check:format",
+    "check:lint": "eslint --cache 'pkg/**/**.ts'",
+    "check:type": "tsc -p . --noEmit",
+    "check:format": "prettier --check 'pkg/**/**.ts'"
   },
   "keywords": [],
   "author": "Poporon Network (Tatsuto C. YAMAMOTO) & Other Contributors",
