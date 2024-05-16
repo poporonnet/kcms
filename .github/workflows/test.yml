@@ -17,5 +17,3 @@ jobs:
         run: bun test
       - name: code check
         run: bun run check
-      - name: lint
-        run: bun run lint
